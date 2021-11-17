@@ -1,0 +1,196 @@
+   0"002.788| WARNING: [3] cannot renice core thread, EPERM
+Task 3 created successfully
+Task 1 init, period:1000000000
+Task 2 init, period:1000000000
+Task 3 init, period:1000000000
+Task 1 activation at time 791981093009
+Task 2 activation at time 791990075170
+Task 3 activation at time 792002083502
+Integration value is: 1.552. It took 109603865 ns to compute.
+Task 3 activation at time 792981035316
+Task 3 inter-arrival time: min: 978951814 / max: 978951814
+Task 2 activation at time 792990105867
+Task 2 inter-arrival time: min: 1000030697 / max: 1000030697
+Task 1 activation at time 793002119622
+Task 1 inter-arrival time: min: 1021026613 / max: 1021026613
+Task 1 activation at time 793980744020
+Task 1 inter-arrival time: min: 978624398 / max: 1021026613
+Task 3 activation at time 793986124351
+Task 3 inter-arrival time: min: 978951814 / max: 1005089035
+Task 2 activation at time 793998076898
+Task 2 inter-arrival time: min: 1000030697 / max: 1007971031
+Task 1 activation at time 794980755575
+Task 2 activation at time 794990089233
+Task 2 inter-arrival time: min: 992012335 / max: 1007971031
+Task 3 activation at time 795002097013
+Task 3 inter-arrival time: min: 978951814 / max: 1015972662
+Task 1 activation at time 795980833600
+Task 3 activation at time 795980988874
+Task 3 inter-arrival time: min: 978891861 / max: 1015972662
+Task 2 activation at time 795990102517
+Task 1 activation at time 796980734700
+Task 2 activation at time 796986096471
+Task 3 activation at time 796998101808
+Task 3 inter-arrival time: min: 978891861 / max: 1017112934
+Task 1 activation at time 797980759767
+Task 2 activation at time 797986231758
+Task 3 activation at time 797998154112
+Task 1 activation at time 798980765964
+Task 2 activation at time 798986104746
+Task 3 activation at time 798998107307
+Task 1 activation at time 799980769917
+Task 2 activation at time 799980874296
+Task 3 activation at time 799998124160
+Task 1 activation at time 800980748992
+Task 2 activation at time 800986135893
+Task 3 activation at time 800998096803
+Task 1 activation at time 801980741075
+Task 2 activation at time 801980863047
+Task 3 activation at time 801998106762
+Task 1 activation at time 802980749436
+Task 2 activation at time 802986155466
+Task 3 activation at time 802995247300
+Task 1 activation at time 803980733422
+Task 2 activation at time 803990101337
+Task 3 activation at time 803998115821
+Task 1 activation at time 804980785082
+Task 2 activation at time 804986118641
+Task 3 activation at time 804990133487
+Task 1 activation at time 805980756075
+Task 2 activation at time 805986125636
+Task 3 activation at time 805998096700
+Task 1 activation at time 806980790520
+Task 2 activation at time 806990107603
+Task 3 activation at time 806998154385
+Task 1 activation at time 807980740172
+Task 2 activation at time 807986123338
+Task 3 activation at time 807998131153
+Task 1 activation at time 808980734007
+Task 2 activation at time 808990100167
+Task 3 activation at time 809002092641
+Task 1 activation at time 809980787690
+Task 2 activation at time 809990117327
+Task 3 activation at time 810002143331
+Task 1 activation at time 810980767414
+Task 3 activation at time 810990107421
+Task 2 activation at time 811002111303
+Task 2 inter-arrival time: min: 992012335 / max: 1011993976
+Task 1 activation at time 811980774434
+Task 2 activation at time 811986248847
+Task 2 inter-arrival time: min: 984137544 / max: 1011993976
+Task 3 activation at time 811995910001
+Task 1 activation at time 812980762550
+Task 3 activation at time 812990103453
+Task 2 activation at time 812995273393
+Task 1 activation at time 813980771628
+Task 3 activation at time 813986121161
+Task 2 activation at time 813998113218
+Task 1 activation at time 814980749012
+Task 3 activation at time 814986162566
+Task 2 activation at time 814989397489
+Task 1 activation at time 815980769624
+Task 3 activation at time 815986111120
+Task 2 activation at time 815994151721
+Task 1 activation at time 816980804169
+Task 3 activation at time 816990138120
+Task 2 activation at time 817002110739
+Task 1 activation at time 817980765993
+Task 2 activation at time 817980881146
+Task 2 inter-arrival time: min: 978770407 / max: 1011993976
+Task 3 activation at time 817990111866
+Task 1 activation at time 818980726906
+Task 2 activation at time 818990074912
+Task 3 activation at time 818998082955
+Task 1 activation at time 819980729539
+Task 2 activation at time 819990084705
+Task 3 activation at time 820002087982
+Task 1 activation at time 820980781765
+Task 2 activation at time 820986118691
+Task 3 activation at time 820994126125
+Task 1 activation at time 821980815541
+Task 3 activation at time 821990085821
+Task 2 activation at time 822002089142
+Task 2 inter-arrival time: min: 978770407 / max: 1015970451
+Task 1 activation at time 822980782819
+Task 2 activation at time 822986167461
+Task 3 activation at time 822994213203
+Task 1 activation at time 823980770901
+Task 2 activation at time 823990106508
+Task 3 activation at time 823998606503
+Task 1 activation at time 824980772380
+Task 3 activation at time 824986124314
+Task 2 activation at time 824994334983
+Task 1 activation at time 825980771638
+Task 3 activation at time 825990102466
+Task 2 activation at time 826002107668
+Task 1 activation at time 826980776496
+Task 2 activation at time 826990119851
+Task 3 activation at time 827002106687
+Task 1 activation at time 827980771637
+Task 2 activation at time 827990114412
+Task 3 activation at time 828002117723
+Task 1 activation at time 828980762407
+Task 2 activation at time 828990113826
+Task 3 activation at time 829002104493
+Task 1 activation at time 829980757761
+Task 2 activation at time 829990104168
+Task 3 activation at time 830002109902
+Task 1 activation at time 830980775843
+Task 2 activation at time 830980880831
+Task 3 activation at time 830990100988
+Task 1 activation at time 831980762710
+Task 2 activation at time 831990117013
+Task 3 activation at time 832002149851
+Task 1 activation at time 832980744667
+Task 2 activation at time 832990100702
+Task 3 activation at time 833002095191
+Task 1 activation at time 833980873032
+Task 3 activation at time 833986100799
+Task 2 activation at time 833998105330
+Task 1 activation at time 834980752561
+Task 3 activation at time 834986077962
+Task 2 activation at time 834998082459
+Task 1 activation at time 835980791370
+Task 3 activation at time 835986089594
+Task 2 activation at time 835994237532
+Task 1 activation at time 836980776253
+Task 2 activation at time 836980889729
+Task 3 activation at time 836990113916
+Task 1 activation at time 837980762239
+Task 2 activation at time 837986319946
+Task 3 activation at time 837998105681
+Task 1 activation at time 838980772671
+Task 3 activation at time 838986127038
+Task 2 activation at time 838988725572
+Task 1 activation at time 839980781960
+Task 2 activation at time 839986139953
+Task 3 activation at time 839996302381
+Task 1 activation at time 840980772609
+Task 3 activation at time 840981001910
+Task 2 activation at time 840990102582
+Task 1 activation at time 841980781700
+Task 2 activation at time 841986317752
+Task 3 activation at time 841993192008
+Task 1 activation at time 842980798819
+Task 3 activation at time 842986122081
+Task 2 activation at time 842991700993
+Task 1 activation at time 843980782342
+Task 2 activation at time 843986129745
+Task 3 activation at time 843995876429
+Task 1 activation at time 844980738726
+Task 2 activation at time 844990095616
+Task 3 activation at time 845002090301
+Task 1 activation at time 845980748174
+Task 2 activation at time 845990142366
+Task 3 activation at time 845998374180
+Task 1 activation at time 846980739937
+Task 2 activation at time 846990113752
+Task 3 activation at time 846998195392
+Task 1 activation at time 847980734790
+Task 2 activation at time 847990090821
+Task 3 activation at time 847998123650
+Task 1 activation at time 848980757368
+Task 2 activation at time 848990106790
+Task 3 activation at time 849002101514
+^CTerminating ...
+

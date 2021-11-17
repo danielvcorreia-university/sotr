@@ -9,13 +9,14 @@ LDFLAGS := $(shell $(XENO_CONFIG) --skin=alchemy --ldflags)
 LDFLAGS += -lm  
 CC := $(shell $(XENO_CONFIG) --cc)
 
-EXECUTABLE := periodicTask
+EXECUTABLE_A2 := periodicTaskA2
+EXECUTABLE_A3 := periodicTaskA3
 
-all: $(EXECUTABLE)
+all: $(EXECUTABLE_A2) $(EXECUTABLE_A3)
 
 %: %.c
 	$(CC) -o $@ $< $(CFLAGS) $(LDFLAGS) 
 	
 clean:	
-	rm $(EXECUTABLE)
-	
+	rm $(EXECUTABLE_A2)
+	rm $(EXECUTABLE_A3)	

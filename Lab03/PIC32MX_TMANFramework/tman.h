@@ -32,20 +32,17 @@
 #define TMAN_NO_MEM -3
 #define TMAN_INVALID_TASK_ID -4
 #define TMAN_DIFFERENT_TASKS_FRAMEWORK_INITIALIZED -5
+#define TMAN_TICK_RATE_NOT_MULTIPLE_FREERTOS_TICK -6
 
 /* Define public methods */
 int TMAN_Init(uint32_t nTasks,
                                     uint32_t tmanTickRate
                                     );
 void TMAN_Close();
-int TMAN_StartScheduler();
 int TMAN_TaskAdd(uint32_t taskId,
-                                    char *pcName,
-                                    TaskFunction_t vTaskCode
+                                    char *pcName
                                     );
 int TMAN_TaskRegisterAttributes(uint32_t taskId,
-                                    void *pvParameters,
-                                    UBaseType_t uxPriority,
                                     uint32_t taskPeriod, 
                                     uint32_t taskPhase,
                                     uint32_t taskDeadline, 

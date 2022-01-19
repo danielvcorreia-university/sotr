@@ -19,7 +19,6 @@
 /* Standard includes. */
 #include <stdio.h>
 #include <string.h>
-
 #include <xc.h>
 
 /* Kernel includes. */
@@ -30,54 +29,56 @@
 /* App includes */
 #include "../UART/uart.h"
 
-/* Set the tasks' period (in system ticks) */
-#define LED_FLASH_PERIOD_MS 	( 250 / portTICK_RATE_MS ) // 
-#define INTERF_PERIOD_MS 	( 3000 / portTICK_RATE_MS )
+/* Set the tasks period (in system ticks) */
+#define TASK_A_PERIOD_MS 	( 100 / portTICK_RATE_MS ) 
+#define TASK_B_PERIOD_MS 	( 200 / portTICK_RATE_MS )
+#define TASK_C_PERIOD_MS 	( 120 / portTICK_RATE_MS )
 
-/* Control the load task execution time (# of iterations)*/
-/* Each unit corresponds to approx 50 ms*/
-#define INTERF_WORKLOAD          ( 20)
+/* Number of iterations of each for cycle */
+#define IMAXCOUNT           20000
+#define JMAXCOUNT           20000
 
 /* Priorities of the demo application tasks (high numb. -> high prio.) */
-#define LED_FLASH_PRIORITY	( tskIDLE_PRIORITY + 2 )
-#define INTERF_PRIORITY	    ( tskIDLE_PRIORITY + 1 )
+#define TASK_A_PRIORITY     ( tskIDLE_PRIORITY + 3 )
+#define TASK_B_PRIORITY	    ( tskIDLE_PRIORITY + 2 )
+#define TASK_C_PRIORITY	    ( tskIDLE_PRIORITY + 1 )
+
+struct Param {
+    const char * const pcName;
+    uint32_t taskId;
+};
 
 /*
  * Prototypes and tasks
  */
 
-void pvLedFlash(void *pvParam)
+void defaultTask(void *pvParam)
 {
-    int iTaskTicks = 0;
-    uint8_t mesg[80];
+    TickType_t xLastWakeTime, tick;
+    uint32_t i, j, err;
+    uint8_t mesg[100];
     
-    for(;;) {
-        PORTAbits.RA3 = !PORTAbits.RA3;
-        sprintf(mesg,"Task LedFlash (job %d)\n\r",iTaskTicks++);
+    /* Initialize the xLastWakeTime variable with the current time */
+    xLastWakeTime = xTaskGetTickCount();
+    
+    for(;;) 
+    {
+        err = TMAN_TaskWaitPeriod( ((struct Param *) pvParam)->taskId, &xLastWakeTime );
+        
+        if(err) 
+            { exit(err); }
+        
+        tick = xTaskGetTickCount();
+        
+        sprintf(mesg, "%s, %d\n\r", 
+                ((struct Param *) pvParam)->pcName, 
+                (uint32_t) tick
+                );
         PrintStr(mesg);
-        vTaskDelay(LED_FLASH_PERIOD_MS);        
-    }
-}
-
-void pvInterfTask(void *pvParam)
-{
-    
-    volatile uint32_t counter1, counter2;
-    float x=100.1;
-            
-    for(;;) {
-        PORTCbits.RC1 = 1;        
-        PrintStr("Interfering task release ...");
         
-        /* Workload. In this case just spend CPU time ...*/        
-        for(counter1=0; counter1 < INTERF_WORKLOAD; counter1++ )
-            for(counter2=0; counter2 < 0x10200; counter2++ )
-            x=x/3;                
-
-        PrintStr("and termination!\n\r");
-        PORTCbits.RC1 = 0;        
-        
-        vTaskDelay(INTERF_PERIOD_MS);         
+        for(i = 0; i < IMAXCOUNT; i++)
+            for(j = 0; j < JMAXCOUNT; j++)
+                continue;
     }
 }
 
@@ -87,6 +88,13 @@ void pvInterfTask(void *pvParam)
  */
 int mainTMAN( void )
 {
+    /* Error code */
+    uint32_t err;
+    
+    /* Task functions parameters */
+    struct Param a = { "A", 0 };
+    struct Param b = { "B", 1 };
+    struct Param c = { "C", 2 };
     
     // Set RA3 (LD4) and RC1 (LD5) as outputs
     TRISAbits.TRISA3 = 0;
@@ -107,13 +115,52 @@ int mainTMAN( void )
     printf("Starting SETR FreeRTOS Demo - Simple Led Blink\n\r");
     printf("*********************************************\n\r");
     
-      
+    /* TMAN functions */
+    err = TMAN_Init( 3, 1 );
+    if(err) { exit(err); }
+    
+    TMAN_TaskAdd( 0, a.pcName );
+    if(err) { exit(err); }
+    TMAN_TaskAdd( 1, "B" );
+    if(err) { exit(err); }
+    TMAN_TaskAdd( 2, "C" );
+    if(err) { exit(err); }
+    
+    TMAN_TaskRegisterAttributes( 0, TASK_A_PERIOD_MS, 0,  TASK_A_PERIOD_MS, 0 );
+    if(err) { exit(err); }
+    TMAN_TaskRegisterAttributes( 1, TASK_B_PERIOD_MS, 5,  TASK_B_PERIOD_MS, 0 );
+    if(err) { exit(err); }
+    TMAN_TaskRegisterAttributes( 2, TASK_C_PERIOD_MS, 12, TASK_C_PERIOD_MS, 0 );
+    if(err) { exit(err); }
+    
     /* Create the tasks defined within this file. */
-	xTaskCreate( pvLedFlash, ( const signed char * const ) "Flash", configMINIMAL_STACK_SIZE, NULL, LED_FLASH_PRIORITY, NULL );
-    xTaskCreate( pvInterfTask, ( const signed char * const ) "Interf", configMINIMAL_STACK_SIZE, NULL, INTERF_PRIORITY, NULL );
+	xTaskCreate(
+            defaultTask, 
+            a.pcName, 
+            configMINIMAL_STACK_SIZE, 
+            ( void * ) &a, 
+            TASK_A_PRIORITY, 
+            NULL );
+	xTaskCreate(
+            defaultTask, 
+            "B", 
+            configMINIMAL_STACK_SIZE, 
+            ( void * ) &b, 
+            TASK_B_PRIORITY, 
+            NULL );
+	xTaskCreate(
+            defaultTask, 
+            "C", 
+            configMINIMAL_STACK_SIZE, 
+            ( void * ) &c, 
+            TASK_C_PRIORITY, 
+            NULL );
 
-        /* Finally start the scheduler. */
+    /* Finally start the scheduler. */
 	vTaskStartScheduler();
+    
+    /* Free used space */
+    TMAN_Close();
 
 	/* Will only reach here if there is insufficient heap available to start
 	the scheduler. */

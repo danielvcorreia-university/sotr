@@ -9,6 +9,7 @@
             <file>file:/C:/E/Dev/FreeRTOS/WorkingCopy/FreeRTOS/Demo/PIC32MX_MPLAB/main_full.c</file>
         </group>
         <group>
+            <file>file:/home/dvc/Documents/university/5/sotr/Lab03/FreeRTOSv202107.00/FreeRTOS/Demo/PIC32MX_TMANFramework/mainTMAN.c</file>
             <file>file:/home/dvc/Documents/university/5/sotr/Lab03/FreeRTOSv202107.00/FreeRTOS/Demo/PIC32MX_TMANFramework/tman.h</file>
             <file>file:/home/dvc/Documents/university/5/sotr/Lab03/FreeRTOSv202107.00/FreeRTOS/Demo/PIC32MX_TMANFramework/tman.c</file>
         </group>

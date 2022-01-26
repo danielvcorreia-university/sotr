@@ -25,32 +25,36 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-/* Define return values */
-#define TMAN_SUCCESS 0
-#define TMAN_FAIL -1
-#define TMAN_INVALID_PARAMETER -2
-#define TMAN_NO_MEM -3
-#define TMAN_INVALID_TASK_ID -4
-#define TMAN_DIFFERENT_TASKS_FRAMEWORK_INITIALIZED -5
-#define TMAN_TICK_RATE_NOT_MULTIPLE_FREERTOS_TICK -6
+/* Define return values of functions in framework */
+#define TMAN_SUCCESS                                    0
+#define TMAN_FAIL                                      -1
+#define TMAN_INVALID_PARAMETER                         -2
+#define TMAN_NO_MEM                                    -3
+#define TMAN_INVALID_TASK_NAME                         -4
+#define TMAN_DIFFERENT_TASKS_FRAMEWORK_INITIALIZED     -5
+#define TMAN_TICK_RATE_NOT_MULTIPLE_FREERTOS_TICK      -6
+/* Configuration variables */
+#define TMAN_MAX_TASKS                                  20
+#define TMAN_PRIORITY_REGULATOR_TASK                    ( configMAX_PRIORITIES-1 )
 
 /* Define public methods */
-int TMAN_Init(uint32_t nTasks,
-                                    uint32_t tmanTickRate
+int TMAN_Init(uint32_t tmanTickRateMs
                                     );
 void TMAN_Close();
-int TMAN_TaskAdd(uint32_t taskId,
-                                    char *pcName
+int TMAN_TaskAdd(char *pcName,
+                                    TaskHandle_t pxCreatedTask
                                     );
-int TMAN_TaskRegisterAttributes(uint32_t taskId,
+int TMAN_TaskRegisterAttributes(char *pcName,
                                     uint32_t taskPeriod, 
                                     uint32_t taskPhase,
                                     uint32_t taskDeadline, 
                                     uint32_t taskPrecedenceConstrains
                                     );
-int TMAN_TaskWaitPeriod(uint32_t taskId,
-                                    TickType_t *pxPreviousWakeTime
+int TMAN_TaskWaitPeriod(char *pcName
                                     );
 void TMAN_TaskStats();
+void TMAN_TickHandler(void *pvParam
+                                    );
+
 
 #endif

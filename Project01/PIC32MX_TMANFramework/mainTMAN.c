@@ -27,12 +27,13 @@
 #include "task.h"
 /* App includes */
 #include "../UART/uart.h"
+#include "tman.h"
 
 /* Number of iterations of each for cycle */
-#define IMAXCOUNT                   20000
-#define JMAXCOUNT                   20000
+#define IMAXCOUNT                   1000
+#define JMAXCOUNT                   1000
 /* Framework configuration parameters */
-#define TMAN_TICK                   4
+#define TMAN_TICK                   100
 #define TMAN_NUMBER_TASK            4
 
 /*
@@ -44,10 +45,13 @@ void defaultTask( void *pvParam )
     TickType_t tick;
     uint32_t i, j, err, calc;
     uint8_t mesg[80];
+    //printf( "Before for\n\r" );
     
     for(;;) 
     {
+        //printf( "Inside for\n\r" );
         err = TMAN_TaskWaitPeriod( (char *) pvParam );
+        //printf( "Error = %d\n\r",err );
         
         if( err )
             exit(err);
@@ -57,9 +61,10 @@ void defaultTask( void *pvParam )
         sprintf( mesg, "%s, %d\n\r", (char *) pvParam, (uint32_t) tick );
         PrintStr( mesg );
         
-        for(i = 0; i < IMAXCOUNT; i++)
+        for(i = 0; i < IMAXCOUNT; i++) {
             for(j = 0; j < JMAXCOUNT; j++)
-                calc = i % j;
+                continue;
+        }
     }
 }
 
@@ -74,18 +79,18 @@ int mainTMAN( void )
     /* Task names */
     const char *arrNames[TMAN_NUMBER_TASK] = { "a", "b", "c", "d" };
     /* Task period */
-    uint32_t arrPeriods[TMAN_NUMBER_TASK] = { 1, 2, 4, 6 };
+    uint32_t arrPeriods[TMAN_NUMBER_TASK] = { 1, 1, 1, 1 };
     /* Task phase */
-    uint32_t arrPhase[TMAN_NUMBER_TASK] = { 0, 0, 10, 0 };
+    uint32_t arrPhase[TMAN_NUMBER_TASK] = { 0, 4, 8, 12 };
     /* Task deadline */
-    uint32_t arrDeadline[TMAN_NUMBER_TASK] = { 4, 6, 8, 10 };
+    uint32_t arrDeadline[TMAN_NUMBER_TASK] = { 1, 20, 20, 20 };
     /* Task precedence constrains */
-    uint32_t arrConstrains[TMAN_NUMBER_TASK];
+    const char *arrConstrains[TMAN_NUMBER_TASK] = { "", "a", "", "" };
     /* Task priorities */
     uint32_t arrPriorities[TMAN_NUMBER_TASK] = { tskIDLE_PRIORITY + 1,
-                                                    tskIDLE_PRIORITY + 2,
-                                                    tskIDLE_PRIORITY + 3,
-                                                    tskIDLE_PRIORITY + 4 };
+                                                    tskIDLE_PRIORITY + 1,
+                                                    tskIDLE_PRIORITY + 1,
+                                                    tskIDLE_PRIORITY + 1 };
     /* Task handles */
     TaskHandle_t arrHandles[TMAN_NUMBER_TASK];
     
@@ -110,12 +115,13 @@ int mainTMAN( void )
     printf( "*********************************************\n\r" );
     
     /* Initialize framework */
-    err = TMAN_Init( TMAN_TICK );
+    err = TMAN_Init( TMAN_TICK, 0, NULL );
     /* Exit program in case function returns an error code */
     if( err )
         exit(err);
+    printf( "Framework initialized successfully\n\r" );
     
-    for( i = 0; i < TMAN_NUMBER_TASK; i++ )
+    for( i = 0; i < 2; i++ )
     {
         /* Add tasks to framework */
         err = TMAN_TaskAdd( arrNames[i], arrHandles[i] );
@@ -123,8 +129,9 @@ int mainTMAN( void )
         if( err )
             exit(err);
     }
+    printf( "Tasks added successfully\n\r" );
     
-    for( i = 0; i < TMAN_NUMBER_TASK; i++ )
+    for( i = 0; i < 2; i++ )
     {
         /* Register attributes for tasks */
         err = TMAN_TaskRegisterAttributes( arrNames[i],
@@ -136,11 +143,13 @@ int mainTMAN( void )
         if( err )
             exit(err);
     }
+     printf( "Attributes added successfully\n\r" );
     
     /* Create the tasks defined within this file. */
-    for( i = 0; i < TMAN_NUMBER_TASK; i++ )
+    
+    for( i = 0; i < 2; i++ )
     {
-        /* Create tasks */
+    //    /* Create tasks */
         err = xTaskCreate(
                 defaultTask, 
                 arrNames[i], 
@@ -152,11 +161,14 @@ int mainTMAN( void )
         if( err != pdPASS )
             exit(err);
     }
+     
+    printf( "Tasks created successfully\n\r" );
 
     /* Finally start the scheduler. */
 	vTaskStartScheduler();
+    printf( "After Scheduler\n\r" );
     
-    /* Free used space */
+    /* Will not get here unless there is insufficient RAM */
     TMAN_Close();
 
 	return 0;

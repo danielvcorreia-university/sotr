@@ -35,26 +35,31 @@
 #define TMAN_TICK_RATE_NOT_MULTIPLE_FREERTOS_TICK      -6
 /* Configuration variables */
 #define TMAN_MAX_TASKS                                  20
-#define TMAN_PRIORITY_REGULATOR_TASK                    ( configMAX_PRIORITIES-1 )
+#define TMAN_PRIORITY_REGULATOR_TASK                    ( ( ( UBaseType_t ) configMAX_PRIORITIES ) - 1 )
 
 /* Define public methods */
-int TMAN_Init(uint32_t tmanTickRateMs
+int TMAN_Init(uint32_t tmanTickRateMs,
+              uint32_t stats, 
+              void *deadlineTaskHandle
                                     );
 void TMAN_Close();
-int TMAN_TaskAdd(char *pcName,
+int TMAN_TaskAdd(const char *pcName,
                                     TaskHandle_t pxCreatedTask
                                     );
-int TMAN_TaskRegisterAttributes(char *pcName,
+int TMAN_TaskRegisterAttributes(const char *pcName,
                                     uint32_t taskPeriod, 
                                     uint32_t taskPhase,
                                     uint32_t taskDeadline, 
-                                    uint32_t taskPrecedenceConstrains
+                                    const char *taskPrecedenceConstrains
                                     );
 int TMAN_TaskWaitPeriod(char *pcName
                                     );
-void TMAN_TaskStats();
+void TMAN_TaskStats(const char * name);
 void TMAN_TickHandler(void *pvParam
                                     );
+void TMAN_PrintUart(void *pvParam
+                                    );
+void TMAN_DeadlineHandle(const char * name);
 
 
 #endif

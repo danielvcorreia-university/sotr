@@ -1,53 +1,32 @@
 /*
+ * authors:
+ * Martim Neves, mec:888904
+ * Daniel Vala Correia, mec:90480
  * 
- * Martim Neves 888904
- * Daniel Vala Correia 90480
- * 
- * FREERTOS demo for ChipKit MAX32 board
- * - Creates two periodic tasks
- * - One toggles Led LD4, other is a long (interfering)task that 
- *      activates LD5 when executing 
- * - When the interfering task has higher priority interference becomes visible
- *      - LD4 does not blink at the right rate
  *
  * Environment:
  * - MPLAB X IDE v5.50
  * - XC32 V2.50
  * - FreeRTOS V202107.00
  *
- *
  */
 
-/* To do list 
- * - change taskPrecedenceConstrains
- * - function TMAN_TaskStats() and see which parameters to use 
- * - prevent impossible tasks with period greater than deadline
- */
-
-/*
- * Questions:
- * 
- * onde meter print constrains
- * onde meter stats e se usa variavel (0,1)
- * 2 funçoes funciona mas 3 ja nao
- * porque nao corre bem na primeira tentativa
- * depois do suspend é o tick que está ready ou executar? (executar)
- * isto pode ser usado para calcular deadline misses?
- * perguntar da callback
- */
-
-
+/* Standard includes. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "tman.h"
-#include "../UART/uart.h"
+#include <xc.h>
+/* Kernel includes. */
 #include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
+/* App includes */
+#include "../UART/uart.h"
+#include "tman.h"
 
 /* Task structure */
 struct Task {
     const char *pcName;
-    TaskHandle_t CreatedTask;
     uint32_t taskPeriod;
     uint32_t taskPhase;
     uint32_t taskDeadline;
@@ -55,6 +34,10 @@ struct Task {
     uint32_t taskActivations;
     uint32_t lastActivationTick;
     uint32_t deadlineMisses;
+    SemaphoreHandle_t xSemaphoreHandler;
+    SemaphoreHandle_t xSemaphore;
+    uint32_t taskPrecedenceIndex;
+    uint32_t execute;
 };
 
 /* Global variables */
@@ -71,68 +54,40 @@ uint32_t g_taskCounter;
 struct Task g_arrTask[TMAN_MAX_TASKS];
 /* Handle of the regulator task */
 TaskHandle_t xHandleRegulator;
-/* Handle of the print task */
-TaskHandle_t xHandlePrint;
 /* Handle of the deadline task */
-void *xHandleDeadline = TMAN_DeadlineHandle;
-/*Show Stats*/
+void (*g_ptrDeadlineCallback)();
+/* Show statistics */
 uint32_t showStats;
 
-/*
-* Function: 	TMAN_TaskStats()
-* Precondition: TMAN Initialized
-* Input: 		None 
-* Output:		None
-* Side Effects:	None.
-* Overview:     .
-* Note:		 	None.
-*/
-
-void TMAN_DeadlineHandle(const char * name)
-{
-    printf( "Task %s missed a deadline!\n\r", name);
+void TMAN_DeadlineCallback(const char * name)
+{    
+    uint8_t mesg[80];
+    
+    sprintf(mesg, "Task %s missed a deadline! [TMAN Tick] %d\n\r", name, g_tmanCurrentTick - 1  );
+    PrintStr(mesg);
 }
-
-/*
-* Function: 	TMAN_TaskStats()
-* Precondition: TMAN Initialized
-* Input: 		None 
-* Output:		None
-* Side Effects:	None.
-* Overview:     .
-* Note:		 	None.
-*/
 
 void TMAN_TaskStats(const char * name)
 {
     uint32_t i;
     uint8_t mesg[80];
     
-    for( i = 0; i < g_taskCounter; i++ ) {
-        if (!strcmp(g_arrTask[i].pcName, name)){
-            sprintf(mesg, "Task %s has %d activations\n\r", g_arrTask[i].pcName, g_arrTask[i].taskActivations );
+    for( i = 0; i < g_taskCounter; i++ ) 
+    {
+        if (!strcmp(g_arrTask[i].pcName, name))
+        {
+            sprintf(mesg, "Task %s has %d activations\n\rTask %s has %d deadline misses\n\r",   \
+                    g_arrTask[i].pcName, g_arrTask[i].taskActivations, g_arrTask[i].pcName, g_arrTask[i].deadlineMisses );
             PrintStr(mesg);
             break;
         }
     }
 }
 
-/*
-* Function: 	TMAN_TickHandler()
-* Precondition: TMAN Initialized
-* Input: 		None 
-* Output:		None
-* Side Effects:	None.
-* Overview:     .
-* Note:		 	None.
-*/
-
 void TMAN_TickHandler( void *pvParam )
 {
-    //printf( "Enter tickHandler\n\r" );
     uint32_t i;
     TickType_t xLastWakeTime;
-    //uint8_t mesg[80];
     TickType_t tick;
     
     /* Initialize the xLastWakeTime variable with the current time */
@@ -140,73 +95,48 @@ void TMAN_TickHandler( void *pvParam )
     
     for(;;)
     {
-        printf( "Regulator task is blocking it self! \n\r" );
-        vTaskDelayUntil( &xLastWakeTime, g_tmanTickInFreeRtosTicks );
-        //printf( "After delay\n\r");
-        
-        tick = xTaskGetTickCount();
-        
-        //sprintf(mesg, "FreeRtos Tick: %d\n\r Tman Tick: %d\n\r", (uint32_t) tick, g_tmanCurrentTick );
-        //PrintStr(mesg);  
+        vTaskDelayUntil( &xLastWakeTime, (const TickType_t)g_tmanTickInFreeRtosTicks );
+        tick = xTaskGetTickCount(); 
         
         for( i = 0; i < g_taskCounter; i++ )
         {
-            if( eTaskGetState( g_arrTask[i].CreatedTask ) == eSuspended )
+            /* Tick is equal to task phase so wake task */
+            if( g_tmanCurrentTick == g_arrTask[i].taskPhase )
             {
-                /* Tick is equal to task phase so wake task */
-                if( g_tmanCurrentTick == g_arrTask[i].taskPhase )
+                if( g_arrTask[i].taskPeriod != 0 )
                 {
-                    //printf( "Resume task %s\n\r", g_arrTask[i].pcName );
-                    vTaskResume( g_arrTask[i].CreatedTask );
-                    //printf( "Task %s resumed successfully\n\r", g_arrTask[i].pcName);
+                    xSemaphoreGive( g_arrTask[i].xSemaphoreHandler );
+                    if( g_arrTask[i].execute == 0 )
+                    {
+                        g_arrTask[i].lastActivationTick = g_tmanCurrentTick;
+                        g_arrTask[i].execute = 1;
+                    }
                 }
-                /* When phase tick has passed */
-                else if( g_tmanCurrentTick > g_arrTask[i].taskPhase )
+            }
+            /* When phase tick has passed */
+            else if( g_tmanCurrentTick > g_arrTask[i].taskPhase )
+            {
+                if( g_arrTask[i].taskPeriod != 0 )
                 {
                     /* Activate tasks periodically */
                     if( ((g_tmanCurrentTick - g_arrTask[i].taskPhase) % g_arrTask[i].taskPeriod) == 0 )
                     {
-                        vTaskResume( g_arrTask[i].CreatedTask );
+                        xSemaphoreGive( g_arrTask[i].xSemaphoreHandler );
+                        if( g_arrTask[i].execute == 0 )
+                        {
+                            g_arrTask[i].lastActivationTick = g_tmanCurrentTick;
+                            g_arrTask[i].execute = 1;
+                        }
                     }
                 }
             }
         }
+        
         g_tmanCurrentTick++;
     }
 }
 
-/*
-* Function: 	TMAN_PrintUart()
-* Precondition: TMAN Initialized
-* Input: 		None 
-* Output:		None
-* Side Effects:	None.
-* Overview:     .
-* Note:		 	None.
-*/
-
-void TMAN_PrintUart( void *pvParam )
-{
-    uint8_t mesg[80];
-    
-    for(;;)
-    {
-        sprintf(mesg, "Printing messages in queue in framework tick: %d\n\r", g_tmanCurrentTick );
-        PrintStr(mesg);  
-    }
-}
-
-/*
-* Function: 	TMAN_Init()
-* Precondition: TMAN Initialized
-* Input: 		None 
-* Output:		None
-* Side Effects:	None.
-* Overview:     .
-* Note:		 	None.
-*/
-
-int TMAN_Init( uint32_t tmanTickRateMs , uint32_t stats, void *deadlineTaskHandle)
+int TMAN_Init( uint32_t tmanTickRateMs , uint32_t stats, void (*ptr)() )
 {
     uint32_t i;
     
@@ -220,8 +150,13 @@ int TMAN_Init( uint32_t tmanTickRateMs , uint32_t stats, void *deadlineTaskHandl
     if( (tmanTickRateMs % g_freertosTickRateMs) != 0 )
         return TMAN_TICK_RATE_NOT_MULTIPLE_FREERTOS_TICK;
     
-    if (deadlineTaskHandle != NULL)
-        xHandleDeadline = deadlineTaskHandle;
+    if (ptr != NULL)
+        g_ptrDeadlineCallback = ptr;
+    else
+        g_ptrDeadlineCallback = &TMAN_DeadlineCallback;
+    
+    /* Initialize Handler */
+    xHandleRegulator = NULL;
     
     /* Creating the regulator task */    
     xTaskCreate( TMAN_TickHandler, 
@@ -231,14 +166,6 @@ int TMAN_Init( uint32_t tmanTickRateMs , uint32_t stats, void *deadlineTaskHandl
                     TMAN_PRIORITY_REGULATOR_TASK, 
                     &xHandleRegulator );
     
-    /* Creating the print task     
-    xTaskCreate( TMAN_PrintUart, 
-                    "print",
-                    configMINIMAL_STACK_SIZE, 
-                    ( void * ) 1, 
-                    tskIDLE_PRIORITY, 
-                    &xHandlePrint );*/
-    
     g_tmanCurrentTick = 0;
     g_taskCounter = 0;
     g_tmanTickInFreeRtosTicks = tmanTickRateMs;
@@ -247,16 +174,6 @@ int TMAN_Init( uint32_t tmanTickRateMs , uint32_t stats, void *deadlineTaskHandl
     return TMAN_SUCCESS;
 }
 
-/*
-* Function: 	TMAN_Close()
-* Precondition: TMAN Initialized
-* Input: 		None 
-* Output:		None
-* Side Effects:	None.
-* Overview:     .
-* Note:		 	None.
-*/
-
 void TMAN_Close()
 {
     uint32_t i;
@@ -264,24 +181,15 @@ void TMAN_Close()
     /* Delete regulator task */
     vTaskDelete( xHandleRegulator );
     
-    /* Delete all created tasks */
+    /* Delete all created semaphores */
     for( i = 0; i < g_taskCounter; i++ )
-        vTaskDelete( g_arrTask[i].CreatedTask );
-    
-    return;
+    {
+        vSemaphoreDelete( g_arrTask[i].xSemaphoreHandler );
+        vSemaphoreDelete( g_arrTask[i].xSemaphore );
+    }
 }
 
-/*
-* Function: 	TMAN_TaskAdd()
-* Precondition: TMAN Initialized
-* Input: 		None 
-* Output:		None
-* Side Effects:	None.
-* Overview:     .
-* Note:		 	None.
-*/
-
-int TMAN_TaskAdd( const char *pcName, TaskHandle_t CreatedTask )
+int TMAN_TaskAdd( const char *pcName )
 {
     uint32_t i = 0;
     
@@ -294,7 +202,14 @@ int TMAN_TaskAdd( const char *pcName, TaskHandle_t CreatedTask )
     
     /* Add task to framework */
     g_arrTask[g_taskCounter].pcName = pcName;
-    g_arrTask[g_taskCounter].CreatedTask = CreatedTask;
+    /* Initialize precedent semaphore */
+    g_arrTask[g_taskCounter].xSemaphore = xSemaphoreCreateBinary();
+    /* Initialize handler semaphore */
+    g_arrTask[g_taskCounter].xSemaphoreHandler = xSemaphoreCreateBinary();
+    
+    if( g_arrTask[g_taskCounter].xSemaphore == NULL || \
+            g_arrTask[g_taskCounter].xSemaphoreHandler == NULL )
+        return TMAN_NO_MEM;
     
     /* Increment task counter */
     g_taskCounter++;
@@ -302,26 +217,13 @@ int TMAN_TaskAdd( const char *pcName, TaskHandle_t CreatedTask )
     return TMAN_SUCCESS;
 }
 
-/*
-* Function: 	TMAN_TaskRegisterAttributes()
-* Precondition: TMAN Initialized
-* Input: 		None 
-* Output:		None
-* Side Effects:	None.
-* Overview:     .
-* Note:		 	None.
-*/
-
 int TMAN_TaskRegisterAttributes(const char *pcName, uint32_t taskPeriod, uint32_t taskPhase,
         uint32_t taskDeadline, const char *taskPrecedenceConstrains )
 {
-    uint32_t i, validTask = 1, taskIndex, validPrecedence = 1;
+    uint32_t i, validTask = 1, taskIndex, taskPrecedenceIndex = 0, validPrecedence = 1;
     
-    if( !strcmp(pcName, taskPrecedenceConstrains))
-    {
+    if( !strcmp(pcName, taskPrecedenceConstrains) )
         return TMAN_INVALID_PARAMETER;
-        
-    }
     
     /* Check if task is already added in framework */
     for( i = 0; i < g_taskCounter; i++ ) 
@@ -330,19 +232,25 @@ int TMAN_TaskRegisterAttributes(const char *pcName, uint32_t taskPeriod, uint32_
         { 
             validTask = 0;
             taskIndex = i;
-            break;
         }
+        /* Save task precedence index */
+        if( !strcmp(g_arrTask[i].pcName, taskPrecedenceConstrains) )
+            taskPrecedenceIndex = i;
     }
+    
+    /* check if valid precedence task is given */
     for( i = 0; i < g_taskCounter; i++ ) 
     {
-        if( strcmp("", taskPrecedenceConstrains)){
-            if( !strcmp(g_arrTask[i].pcName, taskPrecedenceConstrains))
+        if( strcmp("", taskPrecedenceConstrains) )
+        {
+            if( !strcmp(g_arrTask[i].pcName, taskPrecedenceConstrains) )
             {
                 validPrecedence = 0;
                 break;
             }
         }
-        else{
+        else
+        {
             validPrecedence = 0;
             break;
         }
@@ -356,7 +264,7 @@ int TMAN_TaskRegisterAttributes(const char *pcName, uint32_t taskPeriod, uint32_
         return TMAN_INVALID_PARAMETER;
     
     /* Check valid parameters */
-    if( taskPeriod <= 0 || taskPhase < 0 /*|| taskDeadline < taskPeriod*/ )
+    if( taskPeriod < 0 || taskPhase < 0 || taskDeadline <= 0 )
         return TMAN_INVALID_PARAMETER;
     
     /* Define task structure variables */
@@ -364,28 +272,15 @@ int TMAN_TaskRegisterAttributes(const char *pcName, uint32_t taskPeriod, uint32_
     g_arrTask[taskIndex].taskPhase = taskPhase;
     g_arrTask[taskIndex].taskDeadline = taskDeadline;
     g_arrTask[taskIndex].taskPrecedenceConstrains = taskPrecedenceConstrains;
+    g_arrTask[taskIndex].taskPrecedenceIndex = taskPrecedenceIndex;
     
     return TMAN_SUCCESS;
 }
 
-/*
-* Function: 	TMAN_TaskWaitPeriod()
-* Precondition: TMAN Initialized
-* Input: 		None 
-* Output:		None
-* Side Effects:	None.
-* Overview:     .
-* Note:		 	None.
-*/
-
 int TMAN_TaskWaitPeriod( char *pcName )
 {
-    //printf( "Enter WaitPeriod\n\r" );
-    //printf( "%s\n\r", pcName);
     uint32_t i, validTask = 1, taskIndex;
-    uint8_t mesg[80];
     
-    //printf( "Before for\n\r" );
     /* Check if task is already added in framework */
     for( i = 0; i < g_taskCounter; i++ ) 
     {
@@ -393,42 +288,53 @@ int TMAN_TaskWaitPeriod( char *pcName )
         { 
             validTask = 0;
             taskIndex = i;
-            //printf( "validTask1 = %d\n\r",validTask );
             break;
         }
     }
-    //printf( "validTask2 = %d\n\r",validTask );
+    
     if( validTask )
         return TMAN_INVALID_TASK_NAME;
     
-    if (showStats)
-        TMAN_TaskStats(g_arrTask[taskIndex].pcName);
-    
-    if (strcmp(g_arrTask[taskIndex].taskPrecedenceConstrains,"")){
-        sprintf(mesg, "Task %s depends on task %s\n\r", g_arrTask[taskIndex].pcName, g_arrTask[taskIndex].taskPrecedenceConstrains );
-        //PrintStr(mesg);
-    }
-    
-    if (g_arrTask[taskIndex].lastActivationTick != 0){
-        printf( "result = %d\n\r",g_arrTask[taskIndex].lastActivationTick + g_arrTask[taskIndex].taskDeadline);
-        printf( "tick = %d\n\r",g_tmanCurrentTick);
-        if (g_arrTask[taskIndex].lastActivationTick + g_arrTask[taskIndex].taskDeadline < g_tmanCurrentTick){
-            printf( "IF 2\n\r");
-            g_arrTask[taskIndex].deadlineMisses ++;
-            TMAN_DeadlineHandle( g_arrTask[taskIndex].pcName);
+    /* Detect deadline misses */
+    if( g_arrTask[taskIndex].taskActivations != 0 )
+    {
+        if( (g_arrTask[taskIndex].lastActivationTick + g_arrTask[taskIndex].taskDeadline) < (g_tmanCurrentTick - 1) )
+        {
+            g_arrTask[taskIndex].deadlineMisses++;
+            (*g_ptrDeadlineCallback) ( g_arrTask[taskIndex].pcName );
         }
     }
     
+    /* Show statistics if flag is 1 */
+    if( showStats )
+        TMAN_TaskStats( g_arrTask[taskIndex].pcName );
+    
+    /* Don't do a give if it is the first tick */
+    if( g_tmanCurrentTick != 0 )
+        xSemaphoreGive( g_arrTask[taskIndex].xSemaphore );
+    
     /* Task is suspended until regulator task awakes it */
-    //printf( "Before suspend\n\r");
-    vTaskSuspend( g_arrTask[taskIndex].CreatedTask );
-    //printf( "After suspend\n\r");
+    if( g_arrTask[taskIndex].taskPeriod != 0 )
+    {
+        xSemaphoreTake( g_arrTask[taskIndex].xSemaphoreHandler,
+            portMAX_DELAY );
+    }
     
-    g_arrTask[taskIndex].lastActivationTick = g_tmanCurrentTick;
+    /* If this task has a precedence task it blocks on his semaphore */
+    if( strcmp(g_arrTask[taskIndex].taskPrecedenceConstrains,"") )
+    {
+        xSemaphoreTake( g_arrTask[g_arrTask[taskIndex].taskPrecedenceIndex].xSemaphore,
+                 portMAX_DELAY );
+        if( g_arrTask[i].execute == 0 )
+        {
+            g_arrTask[i].lastActivationTick = g_tmanCurrentTick-1;
+            g_arrTask[i].execute = 1;
+        }
+    }
     
-    g_arrTask[taskIndex].taskActivations ++ ;
+    g_arrTask[taskIndex].taskActivations++;
+    g_arrTask[taskIndex].execute = 0;
     
     /* We can check if the task passed it's deadline here */
-    //printf( "Before return\n\r" );
     return TMAN_SUCCESS;
 }

@@ -1,6 +1,0 @@
-projeto sotr
-
-no corpo da tarefa fazer busy wating
-meio milissegundo mais ou menos na parte de fazer contas (divisoes, multiplicacoes)
-
-

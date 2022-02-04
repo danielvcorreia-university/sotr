@@ -31,7 +31,7 @@
 #define IMAXCOUNT                   90
 #define JMAXCOUNT                   15
 /* Framework configuration parameters */
-#define TMAN_TICK                   100
+#define TMAN_TICK                   200
 #define TMAN_NUMBER_TASK            6
 
 void defaultTask( void *pvParam )
@@ -67,19 +67,19 @@ int mainTMAN( void )
     /* Task names */
     const char *arrNames[TMAN_NUMBER_TASK] = { "A", "B", "C", "D", "E", "F" };
     /* Task period */
-    uint32_t arrPeriods[TMAN_NUMBER_TASK] = { 1, 1, 2, 2, 5, 10 };
+    uint32_t arrPeriods[TMAN_NUMBER_TASK] = { 1, 1, 3, 3, 9, 9 };
     /* Task phase */
-    uint32_t arrPhase[TMAN_NUMBER_TASK] = { 0, 0, 0, 1, 2, 0 };
+    uint32_t arrPhase[TMAN_NUMBER_TASK] = { 0, 0, 0, 1, 2, 3 };
     /* Task deadline */
-    uint32_t arrDeadline[TMAN_NUMBER_TASK] = { 10, 10, 10, 10, 10, 10 };
+    uint32_t arrDeadline[TMAN_NUMBER_TASK] = { 1000, 1000, 1000, 1000, 1000, 1000 };
     /* Task precedence constrains */
-    const char *arrConstrains[TMAN_NUMBER_TASK] = { "", "", "E", "", "", "" };
+    const char *arrConstrains[TMAN_NUMBER_TASK] = { "", "", "", "", "D", "" };
     /* Task priorities */
-    uint32_t arrPriorities[TMAN_NUMBER_TASK] = { tskIDLE_PRIORITY + 4,
-                                                    tskIDLE_PRIORITY + 4,
-                                                    tskIDLE_PRIORITY + 3,
+    uint32_t arrPriorities[TMAN_NUMBER_TASK] = { tskIDLE_PRIORITY + 3,
                                                     tskIDLE_PRIORITY + 3,
                                                     tskIDLE_PRIORITY + 2,
+                                                    tskIDLE_PRIORITY + 2,
+                                                    tskIDLE_PRIORITY + 1,
                                                     tskIDLE_PRIORITY + 1 };
     /* Task handles */
     TaskHandle_t arrHandles[TMAN_NUMBER_TASK] = { NULL, NULL, NULL, NULL, NULL, NULL };

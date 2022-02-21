@@ -1,6 +1,6 @@
 /*
  * authors:
- * Martim Neves, mec:888904
+ * Martim Neves, mec:88904
  * Daniel Vala Correia, mec:90480
  * 
  *

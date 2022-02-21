@@ -1,6 +1,6 @@
 /*
  * authors:
- * Martim Neves, mec:888904
+ * Martim Neves, mec:88904
  * Daniel Vala Correia, mec:90480
  * 
  *
@@ -63,7 +63,7 @@ void TMAN_DeadlineCallback(const char * name)
 {    
     uint8_t mesg[80];
     
-    sprintf(mesg, "Task %s missed a deadline! [TMAN Tick] %d\n\r", name, g_tmanCurrentTick - 1  );
+    sprintf(mesg, "Task %s missed a deadline!\n\r", name);
     PrintStr(mesg);
 }
 
@@ -264,7 +264,7 @@ int TMAN_TaskRegisterAttributes(const char *pcName, uint32_t taskPeriod, uint32_
         return TMAN_INVALID_PARAMETER;
     
     /* Check valid parameters */
-    if( taskPeriod < 0 || taskPhase < 0 || taskDeadline <= 0 )
+    if( taskPeriod < 0 || taskPhase < 0 || taskDeadline < 0 )
         return TMAN_INVALID_PARAMETER;
     
     /* Define task structure variables */
@@ -296,12 +296,17 @@ int TMAN_TaskWaitPeriod( char *pcName )
         return TMAN_INVALID_TASK_NAME;
     
     /* Detect deadline misses */
-    if( g_arrTask[taskIndex].taskActivations != 0 )
+    if( g_arrTask[taskIndex].taskActivations != 0 && g_arrTask[taskIndex].taskDeadline > 0)
     {
         if( (g_arrTask[taskIndex].lastActivationTick + g_arrTask[taskIndex].taskDeadline) < (g_tmanCurrentTick - 1) )
         {
             g_arrTask[taskIndex].deadlineMisses++;
-            (*g_ptrDeadlineCallback) ( g_arrTask[taskIndex].pcName );
+            if(g_ptrDeadlineCallback == &TMAN_DeadlineCallback){
+                (*g_ptrDeadlineCallback) ( g_arrTask[taskIndex].pcName );
+            }
+            else{
+                (*g_ptrDeadlineCallback)();
+            }
         }
     }
     
@@ -323,9 +328,14 @@ int TMAN_TaskWaitPeriod( char *pcName )
     /* If this task has a precedence task it blocks on his semaphore */
     if( strcmp(g_arrTask[taskIndex].taskPrecedenceConstrains,"") )
     {
+        if( g_arrTask[i].execute == 0 && g_arrTask[i].taskPeriod != 0)
+        {
+            g_arrTask[i].lastActivationTick = g_tmanCurrentTick-1;
+            g_arrTask[i].execute = 1;
+        }
         xSemaphoreTake( g_arrTask[g_arrTask[taskIndex].taskPrecedenceIndex].xSemaphore,
                  portMAX_DELAY );
-        if( g_arrTask[i].execute == 0 )
+        if( g_arrTask[i].execute == 0 && g_arrTask[i].taskPeriod == 0)
         {
             g_arrTask[i].lastActivationTick = g_tmanCurrentTick-1;
             g_arrTask[i].execute = 1;

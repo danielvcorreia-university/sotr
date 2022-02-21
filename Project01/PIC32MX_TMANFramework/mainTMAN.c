@@ -34,6 +34,10 @@
 #define TMAN_TICK                   200
 #define TMAN_NUMBER_TASK            6
 
+void callback( ){
+    printf( "Deadline missed!\n\r" );
+}
+
 void defaultTask( void *pvParam )
 {
     TickType_t tick;
@@ -71,7 +75,7 @@ int mainTMAN( void )
     /* Task phase */
     uint32_t arrPhase[TMAN_NUMBER_TASK] = { 0, 0, 0, 1, 2, 3 };
     /* Task deadline */
-    uint32_t arrDeadline[TMAN_NUMBER_TASK] = { 1000, 1000, 1000, 1000, 1000, 1000 };
+    uint32_t arrDeadline[TMAN_NUMBER_TASK] = { 0, 0, 0, 0, 0, 0 };
     /* Task precedence constrains */
     const char *arrConstrains[TMAN_NUMBER_TASK] = { "", "", "", "", "D", "" };
     /* Task priorities */
@@ -89,6 +93,8 @@ int mainTMAN( void )
     TRISCbits.TRISC1 = 0;
     PORTAbits.RA3 = 0;
     PORTCbits.RC1 = 0;
+    
+    void (*ptr)() = &callback;
 
 	// Initialize UART and redirect stdin/stdot/stderr to UART
     if( UartInit(configPERIPHERAL_CLOCK_HZ, 115200) != UART_SUCCESS ) 
